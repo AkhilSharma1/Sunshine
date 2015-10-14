@@ -8,6 +8,7 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="action_refresh">Refresh</string>
+    <string name="openweather_apiKey">8ecc4aa8cd6304fa3d24c531646b3caf</string>
     <string name="weather_url"><![CDATA[http://api.openweathermap.org/data/2.5/forecast/daily?q=94043&&appid=8ecc4aa8cd6304fa3d24c531646b3caf&units=metric&cnt=7]]></string>
 
 </resources>

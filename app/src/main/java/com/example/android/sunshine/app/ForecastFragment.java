@@ -1,6 +1,7 @@
 package com.example.android.sunshine.app;
 
 
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,8 +33,16 @@ public class ForecastFragment extends Fragment {
 
     private ArrayAdapter<String> mForecastAdapter;
 
+
     public ForecastFragment() {
     }
+
+    private void LogD(String TAG, String urlString) {
+        //   if (BuildConfig.DEBUG && Log.isLoggable(TAG, Log.DEBUG))
+        Log.d(TAG, urlString);
+
+    }
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -50,7 +60,7 @@ public class ForecastFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
 
         if (item.getItemId() == R.id.action_refresh) {
-            new FetchWeatherTask().execute();
+            new FetchWeatherTask().execute("94043");
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -92,12 +102,42 @@ public class ForecastFragment extends Fragment {
     }
 
 
-    public class FetchWeatherTask extends AsyncTask<Void, Void, Void> {
+    public class FetchWeatherTask extends AsyncTask<String, Void, String> {
 
+
+        final String FORECAST_BASE_URL =
+                "http://api.openweathermap.org/data/2.5/forecast/daily?";
+        final String QUERY_PARAM = "q";
+        final String FORMAT_PARAM = "mode";
+        final String UNITS_PARAM = "units";
+        final String DAYS_PARAM = "cnt";
+        final String APPID_PARAM = "appid";
         private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
+        private URL generateURL(String postalCode) {
+
+            final String urlString = Uri.parse(FORECAST_BASE_URL).buildUpon()
+                    .appendQueryParameter(QUERY_PARAM, postalCode)
+                    .appendQueryParameter(FORMAT_PARAM, "json")
+                    .appendQueryParameter(UNITS_PARAM, "metric")
+                    .appendQueryParameter(DAYS_PARAM, "7")
+                    .appendQueryParameter(APPID_PARAM, getString(R.string.openweather_apiKey))
+                    .build().toString();
+
+            LogD(LOG_TAG, urlString);
+
+            try {
+                return new URL(urlString);
+            } catch (MalformedURLException e) {
+                return null;
+
+            }
+
+        }
+
+
         @Override
-        protected Void doInBackground(Void... params) {
+        protected String doInBackground(String... params) {
             // These two need to be declared outside the try/catch
             // so that they can be closed in the finally block.
             HttpURLConnection urlConnection = null;
@@ -105,17 +145,24 @@ public class ForecastFragment extends Fragment {
 
             // Will contain the raw JSON response as a string.
             String forecastJsonStr = null;
-
+            String newLine = "\n";
             try {
-                String newLine = "\n";
+
 
 
                 // Construct the URL for the OpenWeatherMap query
                 // Possible parameters are avaiable at OWM's forecast API page, at
                 // http://openweathermap.org/API#forecast
-                URL url = new URL(getString(R.string.weather_url));
+                final String postalCode = params[0];
+
+                if (postalCode == null)
+                    return null;
+
+
+                URL url = generateURL(postalCode);
 
                 // Create the request to OpenWeatherMap, and open the connection
+                assert url != null;
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
                 urlConnection.connect();
@@ -160,7 +207,7 @@ public class ForecastFragment extends Fragment {
                     }
                 }
             }
-            return null;
+            return forecastJsonStr;
         }
     }
 }
