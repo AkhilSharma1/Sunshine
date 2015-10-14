@@ -15,6 +15,8 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import org.json.JSONException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -102,7 +104,7 @@ public class ForecastFragment extends Fragment {
     }
 
 
-    public class FetchWeatherTask extends AsyncTask<String, Void, String> {
+    public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
 
 
         final String FORECAST_BASE_URL =
@@ -137,17 +139,17 @@ public class ForecastFragment extends Fragment {
 
 
         @Override
-        protected String doInBackground(String... params) {
+        protected String[] doInBackground(String... params) {
             // These two need to be declared outside the try/catch
             // so that they can be closed in the finally block.
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
+            String[] weatherDataFromJson = null;
 
             // Will contain the raw JSON response as a string.
             String forecastJsonStr = null;
             String newLine = "\n";
             try {
-
 
 
                 // Construct the URL for the OpenWeatherMap query
@@ -190,11 +192,14 @@ public class ForecastFragment extends Fragment {
                     return null;
                 }
                 forecastJsonStr = buffer.toString();
+                weatherDataFromJson = new Utils().getWeatherDataFromJson(forecastJsonStr, 7);
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error ", e);
                 // If the code didn't successfully get the weather data, there's no point in attemping
                 // to parse it.
                 return null;
+            } catch (JSONException e) {
+                e.printStackTrace();
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
@@ -207,7 +212,23 @@ public class ForecastFragment extends Fragment {
                     }
                 }
             }
-            return forecastJsonStr;
+
+
+            return weatherDataFromJson;
+        }
+
+
+        @Override
+        protected void onPostExecute(String[] strings) {
+            super.onPostExecute(strings);
+            if (strings != null) {
+                mForecastAdapter.clear();
+                mForecastAdapter.addAll(strings);
+
+            }
+
         }
     }
+
+
 }
